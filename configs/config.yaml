@@ -1,0 +1,57 @@
+# Trading Agent Configuration
+
+# Data Sources
+data:
+  market_data_source: "yfinance"  # Options: yfinance, stooq
+  symbols: ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA"]
+  start_date: "2020-01-01"
+  end_date: "2024-12-31"
+  frequency: "daily"  # daily, hourly
+  
+# Event Extraction (Qwen LLM)
+event_extraction:
+  model_name: "Qwen/Qwen2.5-7B-Instruct"  # Can use smaller models for faster inference
+  device: "cuda"  # cuda, cpu, mps (for Mac)
+  max_tokens: 512
+  temperature: 0.1
+  batch_size: 8
+  
+# PPO Agent
+ppo:
+  learning_rate: 3e-4
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  
+# Trading Environment
+trading:
+  initial_cash: 100000.0
+  transaction_cost: 0.001  # 0.1% per trade
+  max_position_size: 0.25  # Max 25% of portfolio per stock
+  lookback_window: 60  # Days of historical data for observation
+  
+# Reward Function
+reward:
+  profit_weight: 1.0
+  event_alignment_weight: 0.3
+  risk_penalty_weight: 0.1
+  transaction_cost_penalty: 0.5
+  
+# Training
+training:
+  total_timesteps: 1000000
+  eval_frequency: 10000
+  save_frequency: 50000
+  log_dir: "./models/logs"
+  checkpoint_dir: "./models/checkpoints"
+  
+# Evaluation
+evaluation:
+  metrics: ["sharpe", "sortino", "max_drawdown", "total_return"]
+  risk_free_rate: 0.02  # 2% annual risk-free rate
