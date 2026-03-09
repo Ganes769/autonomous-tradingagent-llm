@@ -64,7 +64,7 @@ class ResultsVisualizer:
         
         # Returns over time
         ax2 = axes[1]
-        returns = self.metrics_calculator._calculate_returns(portfolio_values)
+        returns = self.metrics_calculator._returns(portfolio_values)
         if dates and len(dates) > len(returns):
             return_dates = dates[1:] if len(dates) == len(portfolio_values) else dates[:len(returns)]
             ax2.plot(return_dates, returns * 100, linewidth=1, alpha=0.7, color='green')
