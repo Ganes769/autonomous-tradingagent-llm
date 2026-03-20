@@ -145,12 +145,9 @@ class MarketDataFetcher:
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        
         rs = gain / loss
         rsi = 100 - (100 / (1 + rs))
-        
         return rsi.fillna(50)  # Neutral RSI when insufficient data
-    
     def get_observation_features(
         self,
         symbol: str,
@@ -159,12 +156,10 @@ class MarketDataFetcher:
     ) -> np.ndarray:
         """
         Get feature vector for RL observation.
-        
         Args:
             symbol: Stock ticker
             date: Current date
             lookback_window: Number of days to look back
-            
         Returns:
             Feature vector
         """
