@@ -32,9 +32,50 @@ from src.models.event_extractor import EventExtractor
 from src.models.sentiment_extractor import SentimentExtractor
 from src.models.horizon_interpreter import HorizonInterpreter
 from src.utils.metrics import TradingMetrics
+from src.utils.portfolio_balance import daily_balance_metrics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _print_episode_portfolio_summary(
+    symbols: List[str],
+    info: Dict,
+    episode: int,
+    n_episodes: int,
+) -> Dict:
+    """Pretty-print profit and allocation; return a dict for JSON results."""
+    initial = float(info.get("initial_cash", 0.0))
+    final = float(info["portfolio_value"])
+    pnl = float(info.get("profit_dollars", final - initial))
+    pnl_pct = float(info.get("profit_pct", (pnl / initial) if initial else 0.0))
+    alloc = info.get("allocation") or {}
+    cash_w = float(info.get("cash_weight", 0.0))
+
+    print(f"\n  --- Episode {episode}/{n_episodes} — portfolio snapshot ---")
+    print(f"  Started with:  ${initial:,.2f}")
+    print(f"  Ended with:    ${final:,.2f}")
+    sign = "+" if pnl >= 0 else ""
+    print(f"  Profit / loss: {sign}${pnl:,.2f}  ({sign}{100 * pnl_pct:.2f}%)")
+    if final <= 1e-2:
+        print("  Balance: portfolio is empty (no cash or holdings).")
+    else:
+        print("  Balance at close (% of portfolio by market value):")
+        for sym in symbols:
+            w = float(alloc.get(sym, 0.0))
+            print(f"    {sym:<8}  {100.0 * w:5.1f}%")
+        print(f"    {'Cash':<8}  {100.0 * cash_w:5.1f}%")
+    print("  " + "-" * 52)
+
+    return {
+        "episode": episode,
+        "initial_cash": initial,
+        "final_portfolio_value": final,
+        "profit_dollars": pnl,
+        "profit_pct": pnl_pct,
+        "allocation": alloc,
+        "cash_weight": cash_w,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -234,11 +275,21 @@ def evaluate_agent(
 
     agent = PPO.load(agent_path, env=env)
     metrics_calc = TradingMetrics(risk_free_rate=config["evaluation"]["risk_free_rate"])
+    record_daily_balance = bool(
+        config.get("evaluation", {}).get("record_daily_balance", False)
+    )
 
     all_values: List[float] = []
     all_dates: List = []
     all_labels: List[str] = []
     episode_rewards: List[float] = []
+    episode_summaries: List[Dict] = []
+    daily_balance_rows: List[Dict] = []
+
+    symbols = config["data"]["symbols"]
+    print("\n" + "=" * 60)
+    print(f"PORTFOLIO & PROFIT SUMMARY  ({label or extractor_type})")
+    print("=" * 60)
 
     for ep in range(n_episodes):
         obs, info = env.reset()
@@ -255,11 +306,27 @@ def evaluate_agent(
             ep_reward += reward
             if env.current_step < len(env.dates):
                 ep_dates.append(env.dates[env.current_step - 1])
+            if record_daily_balance and env.current_step > 0:
+                idx = env.current_step - 1
+                d = env.dates[idx] if idx < len(env.dates) else None
+                row = daily_balance_metrics(
+                    info.get("allocation") or {},
+                    float(info.get("cash_weight", 0.0)),
+                )
+                daily_balance_rows.append(
+                    {"episode": ep + 1, "date": str(d) if d is not None else "", **row}
+                )
 
         all_values.extend(ep_values)
         all_dates.extend(ep_dates)
         all_labels.extend(env.action_labels)
         episode_rewards.append(ep_reward)
+
+        summary = _print_episode_portfolio_summary(
+            symbols, info, ep + 1, n_episodes
+        )
+        summary["episode_reward"] = float(ep_reward)
+        episode_summaries.append(summary)
 
         logger.info(
             f"Episode {ep + 1}/{n_episodes}: "
@@ -281,6 +348,7 @@ def evaluate_agent(
         "episodes": n_episodes,
         "label": label or extractor_type,
         "episode_rewards": episode_rewards,
+        "episode_summaries": episode_summaries,
     }
 
     results_dir = Path("results")
@@ -290,6 +358,12 @@ def evaluate_agent(
     with open(out_file, "w") as f:
         json.dump(results, f, indent=2, default=str)
     logger.info(f"Results saved → {out_file}")
+
+    if record_daily_balance and daily_balance_rows:
+        bal_file = results_dir / f"evaluation_results_{stem}_{extractor_type}_daily_balance.json"
+        with open(bal_file, "w") as f:
+            json.dump({"daily_balance": daily_balance_rows}, f, indent=2, default=str)
+        logger.info(f"Daily balance stats saved → {bal_file}")
 
     return results
 

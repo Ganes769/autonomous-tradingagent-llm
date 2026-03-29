@@ -1,0 +1,75 @@
+# Short run for local smoke tests (not for research).
+# Use: python -m src.agents.train --config configs/smoke_train.yaml --mode train --extractor dummy
+
+data:
+  market_data_source: "yfinance"
+  symbols: ["AAPL", "MSFT"]
+  start_date: "2023-01-01"
+  end_date: "2024-06-30"
+  frequency: "daily"
+
+event_extraction:
+  model_name: "Qwen/Qwen2.5-7B-Instruct"
+  device: "mps"
+  max_tokens: 512
+  temperature: 0.1
+  batch_size: 8
+  extractor_type: "dummy"
+
+horizon:
+  short_half_life: 3.0
+  mid_half_life: 15.0
+  long_half_life: 60.0
+  blend_short: 0.50
+  blend_mid: 0.30
+  blend_long: 0.20
+
+ppo:
+  learning_rate: 3e-4
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 4
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+trading:
+  initial_cash: 100000.0
+  transaction_cost: 0.001
+  max_position_size: 0.25
+  lookback_window: 60
+
+reward:
+  profit_weight: 1.0
+  event_alignment_weight: 0.3
+  risk_penalty_weight: 0.1
+  transaction_cost_penalty: 0.5
+
+training:
+  total_timesteps: 8192
+  eval_frequency: 2048
+  save_frequency: 8192
+  log_dir: "./models/logs_smoke"
+  checkpoint_dir: "./models/checkpoints_smoke"
+
+evaluation:
+  metrics:
+    [
+      "sharpe",
+      "sortino",
+      "calmar",
+      "max_drawdown",
+      "total_return",
+      "win_rate",
+      "profit_factor",
+    ]
+  risk_free_rate: 0.02
+  n_episodes: 3
+
+comparison:
+  run_event_extractor: false
+  run_sentiment_baseline: false
+  auto_fallback_to_sentiment: true

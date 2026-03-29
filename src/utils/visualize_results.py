@@ -47,16 +47,30 @@ class ResultsVisualizer:
             save_path: Optional path to save figure
         """
         fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-        
+
+        pv = list(portfolio_values)
+        dt = list(dates) if dates else None
+        if dt is not None:
+            n = min(len(dt), len(pv))
+            if n < len(pv) or n < len(dt):
+                logger.warning(
+                    "Trimming dates/values to %s points (was %s dates, %s values)",
+                    n,
+                    len(dt),
+                    len(pv),
+                )
+            dt = dt[:n]
+            pv = pv[:n]
+
         # Portfolio value over time
         ax1 = axes[0]
-        if dates:
-            ax1.plot(dates, portfolio_values, linewidth=2, label='Portfolio Value')
+        if dt:
+            ax1.plot(dt, pv, linewidth=2, label='Portfolio Value')
         else:
-            ax1.plot(portfolio_values, linewidth=2, label='Portfolio Value')
+            ax1.plot(pv, linewidth=2, label='Portfolio Value')
         
-        ax1.axhline(y=portfolio_values[0], color='r', linestyle='--', alpha=0.5, label='Initial Value')
-        ax1.set_xlabel('Time' if not dates else 'Date')
+        ax1.axhline(y=pv[0], color='r', linestyle='--', alpha=0.5, label='Initial Value')
+        ax1.set_xlabel('Time' if not dt else 'Date')
         ax1.set_ylabel('Portfolio Value ($)')
         ax1.set_title(title)
         ax1.legend()
@@ -64,15 +78,14 @@ class ResultsVisualizer:
         
         # Returns over time
         ax2 = axes[1]
-        returns = self.metrics_calculator._returns(portfolio_values)
-        if dates and len(dates) > len(returns):
-            return_dates = dates[1:] if len(dates) == len(portfolio_values) else dates[:len(returns)]
-            ax2.plot(return_dates, returns * 100, linewidth=1, alpha=0.7, color='green')
+        returns = self.metrics_calculator._returns(pv)
+        if dt is not None and len(returns) > 0 and len(dt) == len(pv) and len(dt) >= len(returns) + 1:
+            ax2.plot(dt[1 : len(returns) + 1], returns * 100, linewidth=1, alpha=0.7, color='green')
         else:
             ax2.plot(returns * 100, linewidth=1, alpha=0.7, color='green')
         
         ax2.axhline(y=0, color='r', linestyle='--', alpha=0.5)
-        ax2.set_xlabel('Time' if not dates else 'Date')
+        ax2.set_xlabel('Time' if not dt else 'Date')
         ax2.set_ylabel('Daily Returns (%)')
         ax2.set_title('Daily Returns')
         ax2.grid(True, alpha=0.3)

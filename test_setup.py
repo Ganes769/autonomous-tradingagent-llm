@@ -120,12 +120,11 @@ def test_metrics():
         
         # Test with sample data
         portfolio_values = [100000, 101000, 102500, 101500, 103000]
-        returns = metrics._calculate_returns(portfolio_values)
-        
-        sharpe = metrics.sharpe_ratio(returns)
-        sortino = metrics.sortino_ratio(returns)
-        max_dd = metrics.max_drawdown(portfolio_values)
-        total_return = metrics.total_return(portfolio_values)
+        m = metrics.calculate_all_metrics(portfolio_values)
+        sharpe = m["sharpe_ratio"]
+        sortino = m["sortino_ratio"]
+        max_dd = m["max_drawdown"]
+        total_return = m["total_return"]
         
         print(f"✓ Metrics calculated:")
         print(f"  Sharpe Ratio: {sharpe:.3f}")

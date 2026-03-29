@@ -136,8 +136,22 @@ class TradingEnv(gym.Env):
         return obs, self._get_info()
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
+        # SB3 may output near-zero vectors; normalising an all-zero action leaves zeros,
+        # which would target 0% stocks and 0% cash and wipe the portfolio in one step.
+        action = np.asarray(action, dtype=np.float32).reshape(-1)
+        n = self.n_assets + 1
+        if action.shape[0] != n:
+            fixed = np.zeros(n, dtype=np.float32)
+            m = min(int(action.shape[0]), n)
+            fixed[:m] = action[:m]
+            action = fixed
         action = np.clip(action, 0.0, 1.0)
-        action = action / (action.sum() + 1e-8)
+        s = float(np.sum(action))
+        if s < 1e-6:
+            action = np.zeros(n, dtype=np.float32)
+            action[-1] = 1.0  # degenerate policy → stay in cash (no bogus -100% blow-up)
+        else:
+            action = action / s
 
         if self.current_step >= len(self.dates):
             return self._get_observation(), 0.0, True, False, self._get_info()
@@ -380,17 +394,38 @@ class TradingEnv(gym.Env):
 
     def _get_info(self) -> Dict:
         idx = max(0, min(self.current_step - 1, len(self.dates) - 1))
+        alloc = {s: 0.0 for s in self.symbols}
+        cash_w = 1.0
+
         if self.current_step > 0:
             date = self.dates[idx]
             prices = self._get_current_prices(date)
-            pv = self.cash + np.sum(self.holdings * prices) if prices is not None else self.initial_cash
+            if prices is not None:
+                pv = float(self.cash + np.sum(self.holdings * prices))
+                if pv > 1e-6:
+                    asset_vals = self.holdings * prices
+                    alloc = {s: float(v / pv) for s, v in zip(self.symbols, asset_vals)}
+                    cash_w = float(self.cash / pv)
+                else:
+                    alloc = {s: 0.0 for s in self.symbols}
+                    cash_w = 0.0
+            else:
+                pv = float(self.initial_cash)
         else:
-            pv = self.initial_cash
+            pv = float(self.initial_cash)
+
+        pnl = pv - float(self.initial_cash)
+        pnl_pct = pnl / float(self.initial_cash) if self.initial_cash > 0 else 0.0
 
         return {
             "portfolio_value": float(pv),
             "cash": float(self.cash),
             "holdings": self.holdings.tolist(),
+            "allocation": alloc,
+            "cash_weight": cash_w,
+            "initial_cash": float(self.initial_cash),
+            "profit_dollars": float(pnl),
+            "profit_pct": float(pnl_pct),
             "step": self.current_step,
             "total_steps": len(self.dates),
             "last_action_label": self.action_labels[-1] if self.action_labels else "N/A",

@@ -11,7 +11,7 @@ data:
 # Event Extraction (Qwen LLM)
 event_extraction:
   model_name: "Qwen/Qwen2.5-7B-Instruct"
-  device: "cuda"           # cuda | cpu | mps
+  device: "cuda" # cuda | cpu | mps
   max_tokens: 512
   temperature: 0.1
   batch_size: 8
@@ -23,10 +23,10 @@ event_extraction:
 
 # Horizon Interpreter
 horizon:
-  short_half_life: 3.0     # trading days
+  short_half_life: 3.0 # trading days
   mid_half_life: 15.0
   long_half_life: 60.0
-  blend_short: 0.50        # weight in composite signal
+  blend_short: 0.50 # weight in composite signal
   blend_mid: 0.30
   blend_long: 0.20
 
@@ -46,21 +46,21 @@ ppo:
 # Trading Environment
 trading:
   initial_cash: 100000.0
-  transaction_cost: 0.001        # 0.1% per trade
-  max_position_size: 0.25        # max 25% of portfolio per stock
-  lookback_window: 60            # days of history in observation
+  transaction_cost: 0.001 # 0.1% per trade
+  max_position_size: 0.25 # max 25% of portfolio per stock
+  lookback_window: 60 # days of history in observation
 
 # Reward Function
 # All components are normalised by initial_cash before weighting.
 reward:
-  profit_weight: 1.0             # weight on daily P&L signal
-  event_alignment_weight: 0.3    # bonus for aligning with event signals
-  risk_penalty_weight: 0.1       # penalty for downside semi-deviation
-  transaction_cost_penalty: 0.5  # extra penalty multiplier on turnover
+  profit_weight: 1.0 # weight on daily P&L signal
+  event_alignment_weight: 0.3 # bonus for aligning with event signals
+  risk_penalty_weight: 0.1 # penalty for downside semi-deviation
+  transaction_cost_penalty: 0.5 # extra penalty multiplier on turnover
 
 # Training
 training:
-  total_timesteps: 30000   # number of env steps (dataset size for training)
+  total_timesteps: 300000 # number of env steps (dataset size for training)
   eval_frequency: 10000
   save_frequency: 50000
   log_dir: "./models/logs"
@@ -68,15 +68,26 @@ training:
 
 # Evaluation
 evaluation:
-  metrics: ["sharpe", "sortino", "calmar", "max_drawdown", "total_return",
-            "win_rate", "profit_factor"]
-  risk_free_rate: 0.02           # 2% annual risk-free rate
+  # If true, evaluation writes results/evaluation_results_<model>_<extractor>_daily_balance.json
+  # with per-day hhi, effective_n, entropy, max weights (see src/utils/portfolio_balance.py).
+  record_daily_balance: false
+  metrics:
+    [
+      "sharpe",
+      "sortino",
+      "calmar",
+      "max_drawdown",
+      "total_return",
+      "win_rate",
+      "profit_factor",
+    ]
+  risk_free_rate: 0.02 # 2% annual risk-free rate
   n_episodes: 10
 
 # Comparison experiment
 comparison:
-  run_event_extractor: true      # evaluate with LLM event extraction
-  run_sentiment_baseline: true   # evaluate with lexicon sentiment baseline
+  run_event_extractor: true # evaluate with LLM event extraction
+  run_sentiment_baseline: true # evaluate with lexicon sentiment baseline
   # If event-based does not outperform sentiment on Sharpe+Sortino,
   # fall back to sentiment extractor automatically during inference.
   auto_fallback_to_sentiment: true
