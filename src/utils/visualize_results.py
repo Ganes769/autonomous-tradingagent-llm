@@ -102,91 +102,172 @@ class ResultsVisualizer:
         self,
         results_with_events: Dict,
         results_without_events: Optional[Dict] = None,
-        save_path: Optional[str] = None
+        save_path: Optional[str] = None,
+        label_a: Optional[str] = None,
+        label_b: Optional[str] = None,
     ):
         """
-        Compare performance with and without event extraction.
-        
-        Args:
-            results_with_events: Dict with 'portfolio_values', 'dates', 'metrics'
-            results_without_events: Optional baseline results
-            save_path: Optional path to save figure
+        Compare two evaluation runs (e.g. event-based vs sentiment baseline).
+
+        Uses ``label`` keys from each results dict when ``label_a`` / ``label_b``
+        are not passed (as produced by ``evaluate_agent``).
         """
+        name_a = label_a or results_with_events.get("label") or "Condition A"
+        name_b = (
+            label_b
+            or (results_without_events or {}).get("label")
+            or "Condition B"
+        )
+
         fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-        
+        fig.suptitle(
+            "Effectiveness comparison: event-based vs sentiment-based",
+            fontsize=14,
+            fontweight="bold",
+        )
+
         # Portfolio comparison
         ax1 = axes[0, 0]
-        dates = results_with_events.get('dates')
+        dates = results_with_events.get("dates")
+        pv_a = results_with_events["portfolio_values"]
+        init = float(pv_a[0]) if pv_a else 0.0
+
+        def _align_dates(pv, dlist):
+            if not dlist:
+                return None, pv
+            n = min(len(dlist), len(pv))
+            return dlist[:n], pv[:n]
+
         if dates:
-            ax1.plot(dates, results_with_events['portfolio_values'], 
-                    label='With Events', linewidth=2)
+            d_a, v_a = _align_dates(pv_a, dates)
+            ax1.plot(d_a, v_a, label=name_a, linewidth=2, color="#1f77b4")
             if results_without_events:
-                ax1.plot(dates, results_without_events['portfolio_values'],
-                        label='Without Events', linewidth=2, alpha=0.7)
+                d_b, v_b = _align_dates(
+                    results_without_events["portfolio_values"],
+                    results_without_events.get("dates") or dates,
+                )
+                ax1.plot(d_b, v_b, label=name_b, linewidth=2, alpha=0.85, color="#ff7f0e")
         else:
-            ax1.plot(results_with_events['portfolio_values'], 
-                    label='With Events', linewidth=2)
+            ax1.plot(pv_a, label=name_a, linewidth=2, color="#1f77b4")
             if results_without_events:
-                ax1.plot(results_without_events['portfolio_values'],
-                        label='Without Events', linewidth=2, alpha=0.7)
-        
-        ax1.axhline(y=results_with_events['portfolio_values'][0], 
-                    color='r', linestyle='--', alpha=0.5, label='Initial Value')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Portfolio Value ($)')
-        ax1.set_title('Portfolio Value Comparison')
-        ax1.legend()
+                ax1.plot(
+                    results_without_events["portfolio_values"],
+                    label=name_b,
+                    linewidth=2,
+                    alpha=0.85,
+                    color="#ff7f0e",
+                )
+
+        if init > 0:
+            ax1.axhline(y=init, color="gray", linestyle="--", alpha=0.6, label="Initial capital")
+        ax1.set_xlabel("Date" if dates else "Step")
+        ax1.set_ylabel("Portfolio value ($)")
+        ax1.set_title("Figure 1. Portfolio value over the evaluation window")
+        ax1.legend(loc="best")
         ax1.grid(True, alpha=0.3)
-        
-        # Metrics comparison
+
+        # Metrics comparison (clip Sortino for display when numerically exploded)
         ax2 = axes[0, 1]
-        metrics_with = results_with_events.get('metrics', {})
-        metrics_without = results_without_events.get('metrics', {}) if results_without_events else {}
-        
-        metric_names = ['sharpe_ratio', 'sortino_ratio', 'total_return']
-        metric_labels = ['Sharpe Ratio', 'Sortino Ratio', 'Total Return']
-        
+        metrics_with = results_with_events.get("metrics", {})
+        metrics_without = (
+            results_without_events.get("metrics", {}) if results_without_events else {}
+        )
+
+        metric_names = ["sharpe_ratio", "sortino_ratio", "total_return"]
+        metric_labels = ["Sharpe", "Sortino (capped†)", "Total return"]
+
+        def _clip_sortino(v: float, cap: float = 10.0) -> float:
+            if abs(v) > cap:
+                return float(np.sign(v) * cap)
+            return float(v)
+
         x = np.arange(len(metric_names))
         width = 0.35
-        
-        values_with = [metrics_with.get(m, 0) for m in metric_names]
-        values_without = [metrics_without.get(m, 0) for m in metric_names] if metrics_without else [0] * len(metric_names)
-        
-        ax2.bar(x - width/2, values_with, width, label='With Events', alpha=0.8)
+
+        raw_w = [metrics_with.get(m, 0.0) for m in metric_names]
+        raw_wo = (
+            [metrics_without.get(m, 0.0) for m in metric_names]
+            if results_without_events
+            else [0.0] * len(metric_names)
+        )
+        values_with = [
+            _clip_sortino(raw_w[1]) if i == 1 else raw_w[i]
+            for i in range(len(metric_names))
+        ]
+        values_without = [
+            _clip_sortino(raw_wo[1]) if i == 1 else raw_wo[i]
+            for i in range(len(metric_names))
+        ]
+
+        ax2.bar(x - width / 2, values_with, width, label=name_a, alpha=0.85, color="#1f77b4")
         if results_without_events:
-            ax2.bar(x + width/2, values_without, width, label='Without Events', alpha=0.8)
-        
-        ax2.set_ylabel('Value')
-        ax2.set_title('Metrics Comparison')
+            ax2.bar(x + width / 2, values_without, width, label=name_b, alpha=0.85, color="#ff7f0e")
+
+        ax2.set_ylabel("Value (return as decimal, e.g. 0.5 = 50%)")
+        ax2.set_title("Figure 2. Key metrics side by side\n†Sortino shown in ±10 when unstable")
         ax2.set_xticks(x)
-        ax2.set_xticklabels(metric_labels)
+        ax2.set_xticklabels(metric_labels, fontsize=9)
         ax2.legend()
-        ax2.grid(True, alpha=0.3, axis='y')
+        ax2.grid(True, alpha=0.3, axis="y")
+        ax2.axhline(0, color="black", linewidth=0.5)
         
         # Drawdown comparison
         ax3 = axes[1, 0]
-        drawdown_with = self._calculate_drawdown_series(results_with_events['portfolio_values'])
-        drawdown_without = self._calculate_drawdown_series(
-            results_without_events['portfolio_values']
-        ) if results_without_events else None
-        
+        drawdown_with = self._calculate_drawdown_series(
+            results_with_events["portfolio_values"]
+        )
+        drawdown_without = (
+            self._calculate_drawdown_series(results_without_events["portfolio_values"])
+            if results_without_events
+            else None
+        )
+
         if dates:
-            ax3.fill_between(dates[:len(drawdown_with)], drawdown_with * 100, 0,
-                            alpha=0.5, label='With Events', color='blue')
-            if drawdown_without:
-                ax3.fill_between(dates[:len(drawdown_without)], drawdown_without * 100, 0,
-                                alpha=0.5, label='Without Events', color='red')
+            n_dd = min(len(dates), len(drawdown_with))
+            d_dd = dates[:n_dd]
+            dd_a = drawdown_with[:n_dd]
+            ax3.fill_between(
+                d_dd,
+                dd_a * 100,
+                0,
+                alpha=0.45,
+                label=name_a,
+                color="#1f77b4",
+            )
+            if drawdown_without is not None:
+                d_raw_b = results_without_events.get("dates") or dates
+                n_dd_b = min(len(d_raw_b), len(drawdown_without))
+                ax3.fill_between(
+                    d_raw_b[:n_dd_b],
+                    drawdown_without[:n_dd_b] * 100,
+                    0,
+                    alpha=0.45,
+                    label=name_b,
+                    color="#ff7f0e",
+                )
         else:
-            ax3.fill_between(range(len(drawdown_with)), drawdown_with * 100, 0,
-                            alpha=0.5, label='With Events', color='blue')
-            if drawdown_without:
-                ax3.fill_between(range(len(drawdown_without)), drawdown_without * 100, 0,
-                                alpha=0.5, label='Without Events', color='red')
-        
-        ax3.set_xlabel('Time')
-        ax3.set_ylabel('Drawdown (%)')
-        ax3.set_title('Drawdown Comparison')
-        ax3.legend()
+            ax3.fill_between(
+                range(len(drawdown_with)),
+                drawdown_with * 100,
+                0,
+                alpha=0.45,
+                label=name_a,
+                color="#1f77b4",
+            )
+            if drawdown_without is not None:
+                ax3.fill_between(
+                    range(len(drawdown_without)),
+                    drawdown_without * 100,
+                    0,
+                    alpha=0.45,
+                    label=name_b,
+                    color="#ff7f0e",
+                )
+
+        ax3.set_xlabel("Date" if dates else "Step")
+        ax3.set_ylabel("Drawdown (%)")
+        ax3.set_title("Figure 3. Drawdown from running peak")
+        ax3.legend(loc="lower right")
         ax3.grid(True, alpha=0.3)
         
         # Event impact analysis
@@ -198,20 +279,28 @@ class ResultsVisualizer:
             
             ax4.barh(event_types, impacts, alpha=0.7)
             ax4.set_xlabel('Average Impact on Returns')
-            ax4.set_title('Event Type Impact Analysis')
-            ax4.grid(True, alpha=0.3, axis='x')
+            ax4.set_title("Figure 4. Event-type impact (if logged)")
+            ax4.grid(True, alpha=0.3, axis="x")
         else:
-            ax4.text(0.5, 0.5, 'Event statistics not available', 
-                    ha='center', va='center', transform=ax4.transAxes)
-            ax4.set_title('Event Impact Analysis')
+            ax4.text(
+                0.5,
+                0.5,
+                "Event-type aggregates not in JSON\n(use portfolio plots for comparison)",
+                ha="center",
+                va="center",
+                transform=ax4.transAxes,
+                fontsize=10,
+            )
+            ax4.set_title("Figure 4. Optional event breakdown")
         
         plt.tight_layout()
         
         if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")
             logger.info(f"Saved comparison plot to {save_path}")
-        
-        plt.show()
+            plt.close(fig)
+        else:
+            plt.show()
     
     def print_detailed_metrics(self, metrics: Dict, label: str = "Results"):
         """Print detailed metrics in a formatted way."""
