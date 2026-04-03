@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1680" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#000" stroke="#000" stroke-width="1">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#000"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="550" y="22" text-anchor="middle" font-size="14" font-weight="bold">Event-LLM Trading Agent - System Flow</text>
+
+  <!-- ========== TRAINING PHASE CONTAINER ========== -->
+  <rect x="20" y="38" width="1060" height="698" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="550" y="58" text-anchor="middle" font-size="12" font-weight="bold">Training Phase</text>
+
+  <!-- Market Data Layer (left stack, analogous to Sensory) -->
+  <rect x="40" y="78" width="120" height="200" fill="#fff" stroke="#000"/>
+  <text x="100" y="94" text-anchor="middle" font-size="10" font-weight="bold">Market Data</text>
+  <text x="100" y="112" text-anchor="middle" font-size="9">Layer</text>
+  <line x1="48" y1="122" x2="152" y2="122"/>
+  <text x="100" y="138" text-anchor="middle" font-size="8">Symbols</text>
+  <text x="100" y="154" text-anchor="middle" font-size="8">OHLCV</text>
+  <text x="100" y="170" text-anchor="middle" font-size="8">Volume</text>
+  <text x="100" y="186" text-anchor="middle" font-size="8">Lookback</text>
+  <text x="100" y="202" text-anchor="middle" font-size="8">Indicators</text>
+  <text x="100" y="218" text-anchor="middle" font-size="8">Dates</text>
+  <text x="100" y="234" text-anchor="middle" font-size="8">Transaction cost</text>
+  <text x="100" y="250" text-anchor="middle" font-size="8">Portfolio state</text>
+
+  <!-- News / Event Layer (analogous to EHRs) -->
+  <rect x="40" y="298" width="120" height="180" fill="#fff" stroke="#000"/>
+  <text x="100" y="314" text-anchor="middle" font-size="10" font-weight="bold">News &amp; Events</text>
+  <text x="100" y="330" text-anchor="middle" font-size="9">Layer</text>
+  <line x1="48" y1="340" x2="152" y2="340"/>
+  <text x="100" y="356" text-anchor="middle" font-size="8">Headlines</text>
+  <text x="100" y="372" text-anchor="middle" font-size="8">Event types</text>
+  <text x="100" y="388" text-anchor="middle" font-size="8">Direction</text>
+  <text x="100" y="404" text-anchor="middle" font-size="8">Horizon</text>
+  <text x="100" y="420" text-anchor="middle" font-size="8">Confidence</text>
+  <text x="100" y="436" text-anchor="middle" font-size="8">Sentiment (baseline)</text>
+  <text x="100" y="452" text-anchor="middle" font-size="8">LLM extraction</text>
+
+  <!-- Simple "feed" icon (IoT-style) -->
+  <g transform="translate(188, 150)">
+    <rect x="0" y="0" width="28" height="20" fill="none"/>
+    <path d="M4,14 L10,8 L16,14 M18,6 L22,10 L18,14" fill="none"/>
+    <circle cx="22" cy="16" r="2" fill="#000"/>
+  </g>
+
+  <!-- Simple mail / document icon for news -->
+  <g transform="translate(188, 360)">
+    <polygon points="0,6 14,0 28,6 28,18 0,18" fill="none"/>
+    <line x1="0" y1="6" x2="14" y2="14"/>
+    <line x1="28" y1="6" x2="14" y2="14"/>
+  </g>
+
+  <!-- Cylinder: Raw feature layer-1 (market) -->
+  <ellipse cx="280" cy="155" rx="52" ry="12" fill="#fff"/>
+  <path d="M228,155 L228,215 A52,12 0 0,0 332,215 L332,155" fill="#fff"/>
+  <ellipse cx="280" cy="215" rx="52" ry="12" fill="#fff"/>
+  <text x="280" y="188" text-anchor="middle" font-size="9">Raw feature</text>
+  <text x="280" y="200" text-anchor="middle" font-size="9">layer-1 (market)</text>
+
+  <!-- Cylinder: Raw feature layer-2 (news/events) -->
+  <path d="M228,365 L228,425 A52,12 0 0,0 332,425 L332,365" fill="#fff"/>
+  <ellipse cx="280" cy="365" rx="52" ry="12" fill="#fff"/>
+  <ellipse cx="280" cy="425" rx="52" ry="12" fill="#fff"/>
+  <text x="280" y="398" text-anchor="middle" font-size="9">Raw feature</text>
+  <text x="280" y="410" text-anchor="middle" font-size="9">layer-2 (NLP)</text>
+
+  <!-- Arrows from sources to cylinders -->
+  <line x1="160" y1="178" x2="226" y2="178" marker-end="url(#arrow)"/>
+  <line x1="160" y1="388" x2="226" y2="388" marker-end="url(#arrow)"/>
+
+  <!-- Cylinder: Fused raw feature layer -->
+  <path d="M228,470 L228,530 A52,12 0 0,0 332,530 L332,470" fill="#fff"/>
+  <ellipse cx="280" cy="470" rx="52" ry="12" fill="#fff"/>
+  <ellipse cx="280" cy="530" rx="52" ry="12" fill="#fff"/>
+  <text x="280" y="503" text-anchor="middle" font-size="9">Fused raw</text>
+  <text x="280" y="515" text-anchor="middle" font-size="9">feature layer</text>
+  <line x1="280" y1="215" x2="280" y2="250" marker-end="url(#arrow)"/>
+  <line x1="280" y1="425" x2="280" y2="450" marker-end="url(#arrow)"/>
+  <line x1="280" y1="250" x2="280" y2="450" stroke-dasharray="4,3" opacity="0.5"/>
+  <line x1="250" y1="250" x2="310" y2="450" stroke-dasharray="4,3" opacity="0.3"/>
+
+  <!-- Preprocessing (dashed rounded rect) -->
+  <rect x="400" y="120" width="200" height="100" rx="10" ry="10" fill="#fff" stroke="#000" stroke-dasharray="5,4"/>
+  <text x="500" y="142" text-anchor="middle" font-size="10" font-weight="bold">Preprocessing Layer</text>
+  <text x="500" y="162" text-anchor="middle" font-size="9">Handling missing values</text>
+  <text x="500" y="178" text-anchor="middle" font-size="9">Technical smoothing / windows</text>
+  <text x="500" y="194" text-anchor="middle" font-size="9">Normalization / scaling</text>
+  <text x="500" y="210" text-anchor="middle" font-size="9">Feature alignment to dates</text>
+
+  <line x1="332" y1="500" x2="500" y2="220" marker-end="url(#arrow)"/>
+
+  <!-- Application Layer (right) -->
+  <rect x="660" y="88" width="380" height="220" fill="#fff" stroke="#000"/>
+  <text x="850" y="108" text-anchor="middle" font-size="10" font-weight="bold">Application Layer</text>
+
+  <rect x="680" y="120" width="160" height="90" fill="#fff" stroke="#000"/>
+  <text x="760" y="140" text-anchor="middle" font-size="9" font-weight="bold">Policy Layer</text>
+  <text x="760" y="158" text-anchor="middle" font-size="8">PPO agent (MlpPolicy)</text>
+  <text x="760" y="174" text-anchor="middle" font-size="8">Trading environment</text>
+  <text x="760" y="190" text-anchor="middle" font-size="8">Reward: profit + alignment</text>
+  <text x="760" y="206" text-anchor="middle" font-size="8">+ risk / transaction terms</text>
+
+  <rect x="860" y="120" width="160" height="90" fill="#fff" stroke="#000"/>
+  <text x="940" y="140" text-anchor="middle" font-size="9" font-weight="bold">Performance Layer</text>
+  <text x="940" y="158" text-anchor="middle" font-size="8">Sharpe / Sortino</text>
+  <text x="940" y="174" text-anchor="middle" font-size="8">Max drawdown</text>
+  <text x="940" y="190" text-anchor="middle" font-size="8">Total return</text>
+  <text x="940" y="206" text-anchor="middle" font-size="8">Win rate / profit factor</text>
+
+  <line x1="840" y1="165" x2="858" y2="165" marker-end="url(#arrow)"/>
+
+  <line x1="600" y1="170" x2="678" y2="165" marker-end="url(#arrow)"/>
+
+  <!-- Decision diamond -->
+  <polygon points="850,360 920,400 850,440 780,400" fill="#fff" stroke="#000"/>
+  <text x="850" y="395" text-anchor="middle" font-size="8">Required learning</text>
+  <text x="850" y="406" text-anchor="middle" font-size="8">performance achieved?</text>
+
+  <line x1="760" y1="210" x2="850" y2="350" marker-end="url(#arrow)"/>
+  <text x="810" y="275" font-size="8">train / eval callback</text>
+
+  <!-- No loop back -->
+  <path d="M920,400 L980,400 L980,165 L842,165" fill="none" marker-end="url(#arrow)"/>
+  <text x="990" y="280" font-size="8">No: continue</text>
+  <text x="990" y="292" font-size="8">training steps</text>
+
+  <!-- Yes to cloud -->
+  <line x1="850" y1="440" x2="850" y2="718" marker-end="url(#arrow)"/>
+  <text x="862" y="590" font-size="8">Yes</text>
+
+  <!-- ========== CLOUD ========== -->
+  <path d="M730,728 Q700,718 720,698 Q680,688 710,668 Q730,648 770,658 Q810,648 830,668 Q870,658 880,688 Q900,708 870,728 Q850,748 810,742 Q770,752 730,728 Z" fill="#fff" stroke="#000" stroke-width="1.2"/>
+  <text x="800" y="705" text-anchor="middle" font-size="10" font-weight="bold">Trained PPO</text>
+  <text x="800" y="720" text-anchor="middle" font-size="9">checkpoint (cloud / artifact)</text>
+
+  <!-- ========== VALIDATION PHASE ========== -->
+  <rect x="20" y="758" width="1060" height="900" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="550" y="782" text-anchor="middle" font-size="12" font-weight="bold">Validation Phase</text>
+
+  <!-- Inputs -->
+  <rect x="40" y="810" width="120" height="200" fill="#fff" stroke="#000"/>
+  <text x="100" y="828" text-anchor="middle" font-size="10" font-weight="bold">Inputs</text>
+  <text x="100" y="846" text-anchor="middle" font-size="9">(live or hold-out)</text>
+  <line x1="48" y1="856" x2="152" y2="856"/>
+  <text x="100" y="874" text-anchor="middle" font-size="8">Market bars</text>
+  <text x="100" y="890" text-anchor="middle" font-size="8">News text</text>
+  <text x="100" y="906" text-anchor="middle" font-size="8">Same feature fusion</text>
+  <text x="100" y="922" text-anchor="middle" font-size="8">Event vs sentiment</text>
+  <text x="100" y="938" text-anchor="middle" font-size="8">extractor switch</text>
+
+  <line x1="800" y1="748" x2="800" y2="758" stroke-width="1.5"/>
+
+  <!-- Import model box -->
+  <rect x="280" y="850" width="360" height="120" fill="#fff" stroke="#000"/>
+  <text x="460" y="880" text-anchor="middle" font-size="11" font-weight="bold">Import model from cloud</text>
+  <text x="460" y="900" text-anchor="middle" font-size="10">for deterministic rollout / comparison</text>
+  <text x="460" y="920" text-anchor="middle" font-size="9">Same weights, alternate observation pipelines</text>
+  <text x="460" y="938" text-anchor="middle" font-size="9">(event-based vs sentiment-based)</text>
+
+  <line x1="160" y1="910" x2="278" y2="910" marker-end="url(#arrow)"/>
+  <line x1="800" y1="748" x2="460" y2="850" marker-end="url(#arrow)"/>
+
+  <!-- Decision diamond validation -->
+  <polygon points="720,1020 800,1065 720,1110 640,1065" fill="#fff" stroke="#000"/>
+  <text x="720" y="1062" text-anchor="middle" font-size="8">Risk-adjusted</text>
+  <text x="720" y="1073" text-anchor="middle" font-size="8">targets met?</text>
+
+  <line x1="460" y1="970" x2="720" y2="1020" marker-end="url(#arrow)"/>
+
+  <!-- Discard -->
+  <circle cx="580" cy="1180" r="36" fill="#fff" stroke="#000"/>
+  <text x="580" y="1184" text-anchor="middle" font-size="9">Discard /</text>
+  <text x="580" y="1196" text-anchor="middle" font-size="9">retrain</text>
+  <line x1="660" y1="1095" x2="600" y2="1145" marker-end="url(#arrow)"/>
+  <text x="640" y="1135" font-size="8">No</text>
+
+  <!-- Comparative effectiveness box -->
+  <rect x="760" y="1140" width="300" height="220" fill="#fff" stroke="#000"/>
+  <text x="910" y="1162" text-anchor="middle" font-size="10" font-weight="bold">COMPARATIVE EFFECTIVENESS</text>
+  <text x="910" y="1182" text-anchor="middle" font-size="8">(event-based vs sentiment-based)</text>
+  <line x1="770" y1="1190" x2="1050" y2="1190"/>
+  <text x="780" y="1208" font-size="8">When event pipeline wins on Sharpe and Sortino:</text>
+  <text x="780" y="1224" font-size="8">retain LLM structured-event features.</text>
+  <text x="780" y="1246" font-size="8">When sentiment baseline is stronger:</text>
+  <text x="780" y="1262" font-size="8">prefer lexicon path or improve news alignment.</text>
+  <text x="780" y="1286" font-size="8">Always compare portfolio paths, drawdown,</text>
+  <text x="780" y="1302" font-size="8">cumulative return, and episode consistency.</text>
+
+  <line x1="800" y1="1110" x2="880" y2="1140" marker-end="url(#arrow)"/>
+  <text x="820" y="1135" font-size="8">Yes</text>
+
+  <!-- Footer note -->
+  <text x="550" y="1670" text-anchor="middle" font-size="9" fill="#333">Event-LLM / PPO trading agent / schematic (SVG)</text>
+</svg>
