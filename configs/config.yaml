@@ -65,6 +65,8 @@ training:
   save_frequency: 50000
   log_dir: "./models/logs"
   checkpoint_dir: "./models/checkpoints"
+  # Stable-Baselines3 writes TensorBoard event files under log_dir/PPO_<tb_log_name>/
+  tensorboard: true
 
 # Evaluation
 evaluation:

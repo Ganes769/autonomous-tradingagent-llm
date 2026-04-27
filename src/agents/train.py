@@ -193,12 +193,20 @@ def train_agent(
 
     log_dir = config["training"]["log_dir"]
     ckpt_dir = config["training"]["checkpoint_dir"]
+    use_tb = bool(config["training"].get("tensorboard", True))
+    tb_root = os.path.abspath(log_dir) if use_tb else None
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(ckpt_dir, exist_ok=True)
 
+    tb_run = f"{extractor_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
     if resume_from:
         logger.info(f"Resuming from {resume_from}")
-        agent = PPO.load(resume_from, env=train_env)
+        agent = PPO.load(
+            resume_from,
+            env=train_env,
+            tensorboard_log=tb_root,
+        )
     else:
         ppocfg = config["ppo"]
         agent = PPO(
@@ -215,7 +223,7 @@ def train_agent(
             vf_coef=ppocfg["vf_coef"],
             max_grad_norm=ppocfg["max_grad_norm"],
             verbose=1,
-            tensorboard_log=None,  # set to log_dir if tensorboard is installed
+            tensorboard_log=tb_root,
         )
 
     eval_cb = EvalCallback(
@@ -233,11 +241,19 @@ def train_agent(
     )
 
     logger.info(f"Training for {config['training']['total_timesteps']} steps...")
-    agent.learn(
+    if use_tb:
+        logger.info(
+            f"TensorBoard: tensorboard --logdir {tb_root}   "
+            f"(run folder PPO_{tb_run})"
+        )
+    learn_kw = dict(
         total_timesteps=config["training"]["total_timesteps"],
         callback=[eval_cb, ckpt_cb],
         progress_bar=True,
     )
+    if use_tb:
+        learn_kw["tb_log_name"] = tb_run
+    agent.learn(**learn_kw)
 
     final_path = os.path.join(ckpt_dir, f"final_model_{extractor_type}")
     agent.save(final_path)
