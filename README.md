@@ -140,12 +140,26 @@ See `QUICK_START_RESULTS.md` for detailed guide on interpreting results.
 
 ## Data Sources
 
-The system supports multiple data sources:
+The system supports multiple data sources for both **market prices** and (optionally) **news / events**. In most experiments, the market data source is set in `configs/config.yaml` and cached under `data/market/`.
 
-1. **Yahoo Finance** (default): Free historical stock data via `yfinance` library
-2. **Stooq**: Free historical market data from https://stooq.com/db/h/ (download manually and load into system)
-3. **GDELT Project**: For news events (can be integrated) - https://www.gdeltproject.org/
-4. **Kaggle**: Stock market datasets available on Kaggle
+### Market data
+
+1. **Yahoo Finance** (default): Historical OHLCV via the `yfinance` Python package. This is convenient for prototyping, but availability and adjustment conventions can vary by ticker and time range.
+2. **Stooq**: Free historical market data dumps that can be downloaded and loaded into the system (useful for reproducibility and avoiding rate limits).
+3. **Kaggle**: Many curated market datasets and corporate action datasets are available; these can be preprocessed into the same OHLCV format expected by the environment.
+
+### News / event data (optional)
+
+This repo focuses on **event extraction** (LLM → structured events). You can bring your own news feed and provide it as JSONL (see below), or integrate a public dataset/provider:
+
+1. **GDELT Project**: Large-scale global event and news metadata that can be used to build a news stream per ticker.
+2. **Kaggle news datasets**: Multiple headline/article corpora exist that can be aligned to trading dates.
+
+### Notes on reproducibility
+
+- **Time alignment**: When using news, align timestamps to your trading calendar (e.g., market close) to avoid look-ahead bias.
+- **Survivorship bias**: If you expand symbols beyond large-cap tech, consider how delistings and ticker changes are handled.
+- **Data licensing**: Verify dataset/provider terms before redistribution or commercial use.
 
 ### Adding News Data
 
@@ -258,6 +272,19 @@ This system demonstrates:
 - [ ] Backtesting framework with historical news
 - [ ] Ensemble of multiple agents
 - [ ] Online learning (continuous adaptation)
+
+## References
+
+The following references are useful background for the main components used in this project (RL, PPO, Gym-style environments, logging, and the core libraries used here):
+
+1. **Proximal Policy Optimization (PPO)**: Schulman et al., “Proximal Policy Optimization Algorithms” (2017). [arXiv:1707.06347](https://arxiv.org/abs/1707.06347)
+2. **Stable-Baselines3**: Official documentation and algorithm references. [Stable-Baselines3 Docs](https://stable-baselines3.readthedocs.io/)
+3. **Gymnasium**: Standard RL environment API used by many modern RL libraries. [Gymnasium Docs](https://gymnasium.farama.org/)
+4. **TensorBoard**: Training metrics visualization and experiment dashboard. [TensorBoard Overview](https://www.tensorflow.org/tensorboard)
+5. **Hugging Face Transformers**: Model loading/inference stack used for Qwen and other LLMs. [Transformers Docs](https://huggingface.co/docs/transformers)
+6. **Qwen Models**: Model cards and usage notes for the Qwen family. [Qwen on Hugging Face](https://huggingface.co/Qwen)
+7. **Yahoo Finance via `yfinance`**: Python interface used for historical market data. [`yfinance` GitHub](https://github.com/ranaroussi/yfinance)
+8. **QuantStats**: Performance and risk metric utilities used for reporting. [QuantStats GitHub](https://github.com/ranaroussi/quantstats)
 
 ## License
 

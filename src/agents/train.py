@@ -295,9 +295,13 @@ def evaluate_agent(
         config.get("evaluation", {}).get("record_daily_balance", False)
     )
 
-    all_values: List[float] = []
-    all_dates: List = []
-    all_labels: List[str] = []
+    # NOTE: Metrics must be computed per-episode.
+    # Concatenating episodes creates artificial discontinuities (portfolio resets)
+    # that can explode volatility/Sortino and make "total_return" meaningless.
+    episode_portfolio_values: List[List[float]] = []
+    episode_dates: List[List] = []
+    episode_action_labels: List[List[str]] = []
+    episode_metrics: List[Dict[str, float]] = []
     episode_rewards: List[float] = []
     episode_summaries: List[Dict] = []
     daily_balance_rows: List[Dict] = []
@@ -333,9 +337,9 @@ def evaluate_agent(
                     {"episode": ep + 1, "date": str(d) if d is not None else "", **row}
                 )
 
-        all_values.extend(ep_values)
-        all_dates.extend(ep_dates)
-        all_labels.extend(env.action_labels)
+        episode_portfolio_values.append(ep_values)
+        episode_dates.append(ep_dates)
+        episode_action_labels.append(list(env.action_labels))
         episode_rewards.append(ep_reward)
 
         summary = _print_episode_portfolio_summary(
@@ -349,18 +353,37 @@ def evaluate_agent(
             f"final=${info['portfolio_value']:.2f}, reward={ep_reward:.4f}"
         )
 
-    metrics = metrics_calc.calculate_all_metrics(
-        all_values, all_dates or None, all_labels
-    )
+    # Compute per-episode metrics then aggregate (mean).
+    for ep in range(n_episodes):
+        em = metrics_calc.calculate_all_metrics(
+            episode_portfolio_values[ep],
+            episode_dates[ep] or None,
+            episode_action_labels[ep] or None,
+        )
+        episode_metrics.append(em)
+
+    def _mean_metric(key: str) -> float:
+        vals = [float(m.get(key, 0.0)) for m in episode_metrics]
+        return float(np.mean(vals)) if vals else 0.0
+
+    metrics = {k: _mean_metric(k) for k in (episode_metrics[0].keys() if episode_metrics else [])}
     conv = TradingMetrics.compute_convergence_stats(episode_rewards)
     metrics.update(conv)
 
     metrics_calc.print_metrics(metrics, label=label or extractor_type)
 
+    # Keep a single representative episode curve for plotting (episode 1),
+    # and store per-episode curves for deeper analysis.
+    plot_values = episode_portfolio_values[0] if episode_portfolio_values else []
+    plot_dates = episode_dates[0] if episode_dates else []
+
     results = {
-        "portfolio_values": all_values,
-        "dates": [str(d) for d in all_dates],
+        "portfolio_values": plot_values,
+        "dates": [str(d) for d in plot_dates],
+        "episode_portfolio_values": episode_portfolio_values,
+        "episode_dates": [[str(d) for d in ds] for ds in episode_dates],
         "metrics": metrics,
+        "episode_metrics": episode_metrics,
         "episodes": n_episodes,
         "label": label or extractor_type,
         "episode_rewards": episode_rewards,

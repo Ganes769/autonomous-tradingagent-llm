@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
+from pathlib import Path
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +24,8 @@ class MarketDataFetcher:
         symbols: List[str],
         start_date: str,
         end_date: str,
-        frequency: str = "daily"
+        frequency: str = "daily",
+        cache_dir: str = "data/market",
     ):
         """
         Initialize market data fetcher.
@@ -39,6 +41,37 @@ class MarketDataFetcher:
         self.end_date = end_date
         self.frequency = frequency
         self.data_cache = {}
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def _cache_path(self, symbol: str) -> Path:
+        interval = "1d" if self.frequency == "daily" else "1h"
+        safe = f"{symbol.upper()}_{self.start_date}_{self.end_date}_{interval}.parquet"
+        return self.cache_dir / safe
+
+    def _load_from_disk_cache(self, symbol: str) -> Optional[pd.DataFrame]:
+        p = self._cache_path(symbol)
+        if not p.exists():
+            return None
+        try:
+            df = pd.read_parquet(p)
+            if "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"])
+                df = df.set_index("date")
+            else:
+                df.index = pd.to_datetime(df.index)
+            return df.sort_index()
+        except Exception as e:
+            logger.warning(f"Failed to read cached market data for {symbol}: {e}")
+            return None
+
+    def _save_to_disk_cache(self, symbol: str, df: pd.DataFrame) -> None:
+        try:
+            out = df.copy()
+            out = out.reset_index().rename(columns={out.index.name or "index": "date"})
+            out.to_parquet(self._cache_path(symbol), index=False)
+        except Exception as e:
+            logger.warning(f"Failed to cache market data for {symbol}: {e}")
     
     def fetch_data(self, symbol: str) -> pd.DataFrame:
         """
@@ -52,6 +85,11 @@ class MarketDataFetcher:
         """
         if symbol in self.data_cache:
             return self.data_cache[symbol]
+
+        cached = self._load_from_disk_cache(symbol)
+        if cached is not None and not cached.empty:
+            self.data_cache[symbol] = cached
+            return cached
         
         logger.info(f"Fetching data for {symbol}")
         
@@ -76,6 +114,7 @@ class MarketDataFetcher:
             df = self._add_technical_indicators(df)
             
             self.data_cache[symbol] = df
+            self._save_to_disk_cache(symbol, df)
             return df
             
         except Exception as e:
