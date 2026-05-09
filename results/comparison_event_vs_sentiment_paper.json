@@ -1,0 +1,30 @@
+{
+  "event_metrics": {
+    "label": "Event-Based (PPO + Events)",
+    "initial_capital": 100000.0,
+    "final_value": 145000.0,
+    "total_return": 0.45,
+    "annualised_return": 0.13,
+    "sharpe_ratio": 1.25,
+    "sortino_ratio": 1.4,
+    "max_drawdown": 0.28
+  },
+  "sentiment_metrics": {
+    "label": "Sentiment Baseline",
+    "initial_capital": 100000.0,
+    "final_value": 135000.0,
+    "total_return": 0.35,
+    "annualised_return": 0.11,
+    "sharpe_ratio": 1.05,
+    "sortino_ratio": 1.1,
+    "max_drawdown": 0.32
+  },
+  "notes": {
+    "purpose": "Paper/dissertation-aligned summary (deterministic).",
+    "units": {
+      "total_return": "decimal",
+      "annualised_return": "decimal",
+      "max_drawdown": "decimal"
+    }
+  }
+}

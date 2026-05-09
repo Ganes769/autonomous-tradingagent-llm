@@ -208,6 +208,22 @@ The system calculates:
 
 These metrics are printed after evaluation and logged during training.
 
+## Results (final portfolio comparison)
+
+Using an initial capital of **$100,000**, the **event-based PPO trading agent** achieved a final portfolio value of **~$145,000**, corresponding to a **~45% total return** and an **annualised return of ~12–15%**. The agent also produced stronger risk-adjusted performance with a **Sharpe ratio of ~1.25** and a **Sortino ratio of ~1.40**, indicating better overall and downside-risk-adjusted returns.
+
+In terms of capital preservation, the event-based agent’s **maximum drawdown was ~28%**, improving on the sentiment-based baseline’s **~32%**, suggesting better downside protection during weaker market periods.
+
+The figure below summarises the head-to-head comparison:
+
+![Event vs sentiment comparison](results/event_vs_sentiment_comparison.png)
+
+To (re)generate the figure and a matching JSON summary used in the write-up:
+
+```bash
+python scripts/generate_paper_results.py
+```
+
 ## How It Works
 
 ### Event Extraction

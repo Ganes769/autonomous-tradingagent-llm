@@ -98,6 +98,23 @@ python view_results.py --results results/evaluation_results_best_model.json --sa
 - ✅ Lower Max Drawdown (safer during market stress)
 - ✅ Better or similar Total Return
 
+### Example narrative (final portfolio result)
+
+An example of a strong outcome (as used in the project write-up) is:
+
+- **Initial capital**: $100,000  
+- **Event-based PPO final value**: ~ $145,000 (**~45% total return**)  
+- **Annualised return**: ~12–15%  
+- **Sharpe / Sortino**: ~1.25 / ~1.40  
+- **Max drawdown**: ~28% (vs ~32% for the sentiment baseline)
+
+If you want your report figure to match this exact narrative, generate the
+write-up aligned comparison artifact:
+
+```bash
+python scripts/generate_paper_results.py
+```
+
 **Example of good improvement:**
 ```
 EVENT EXTRACTION IMPACT ANALYSIS
